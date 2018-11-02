@@ -21,7 +21,7 @@
 -github("https://github.com/inaka").
 -license("Apache License 2.0").
 
--behavior(sumo_doc).
+-behaviour(sumo_doc).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Exports.
@@ -88,19 +88,19 @@ set(Key, Value, Reader) when is_atom(Key), is_list(Reader) ->
 %% sumo behavior follows.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% @doc Part of the sumo_doc behavior.
--spec sumo_wakeup(sumo:doc()) -> reader().
+-spec sumo_wakeup(sumo:model()) -> reader().
 sumo_wakeup(Data) ->
   maps:to_list(Data).
 
 %% @doc Part of the sumo_doc behavior.
--spec sumo_sleep(reader()) -> sumo:doc().
+-spec sumo_sleep(reader()) -> sumo:model().
 sumo_sleep(Reader) ->
   maps:from_list(Reader).
 
 %% @doc Part of the sumo_doc behavior.
 -spec sumo_schema() -> sumo:schema().
 sumo_schema() ->
-  sumo:new_schema(?MODULE, [
+  sumo:new_schema(reader, [
     sumo:new_field(id, integer, [not_null, auto_increment, id]),
     sumo:new_field(name, string, [{length, 128}, not_null, unique]),
     sumo:new_field(email, string, [{length, 128}, index])

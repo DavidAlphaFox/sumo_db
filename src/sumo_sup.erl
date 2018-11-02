@@ -24,36 +24,34 @@
 
 -behaviour(supervisor).
 
--type init_result() ::
-   {ok,
-    {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
-     [supervisor:child_spec()]
-    }
-   }.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Exports.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% API
+%%% API
 -export([start_link/0]).
 
-%% Supervisor callbacks
+%%% Supervisor callbacks
 -export([init/1]).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Code starts here.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%=============================================================================
+%%% API
+%%%=============================================================================
 
 -spec start_link() -> {ok, pid()} | {error, term()}.
-start_link() -> supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+start_link() ->
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
--spec init([]) -> init_result().
+%%%=============================================================================
+%%% Supervisor callbacks
+%%%=============================================================================
+
+-spec init(any()) ->
+  {ok, {supervisor:sup_flags(), [supervisor:child_spec()]}}.
 init([]) ->
-  {ok, {
-    {one_for_one, 5, 10},
-    [ sup(sumo_backend_sup)
-    , sup(sumo_store_sup)
-    ]
-  }}.
+  ok = sumo_config:init(),
+  Specs = [
+    sup(sumo_backend_sup),
+    sup(sumo_store_sup),
+    sup(sumo_event_manager_sup)
+  ],
+  {ok, {{one_for_one, 5, 10}, Specs}}.
 
+%% @private
 sup(I) -> {I, {I, start_link, []}, permanent, infinity, supervisor, [I]}.

@@ -22,45 +22,43 @@
 -github("https://github.com/inaka").
 -license("Apache License 2.0").
 
--define(CLD(Name, Module, Options),
-  { Name
-  , {sumo_store, start_link, [Name, Module, Options]}
-  , permanent
-  , 5000
-  , worker
-  , [Module]
-  }
-).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Exports.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--export([start_link/0]).
--export([init/1]).
-
 -behaviour(supervisor).
 
--type init_result() ::
-   {ok,
-    {{supervisor:strategy(), non_neg_integer(), non_neg_integer()},
-     [supervisor:child_spec()]
-    }
-   }
-   | ignore.
+%%% API
+-export([start_link/0]).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Code starts here.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Supervisor callbacks
+-export([init/1]).
 
--spec start_link() -> supervisor:startlink_ret().
+%%%=============================================================================
+%%% API
+%%%=============================================================================
+
+-spec start_link() -> {ok, pid()} | {error, any()}.
 start_link() ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
--spec init(term()) -> init_result().
+%%%=============================================================================
+%%% Supervisor callbacks
+%%%=============================================================================
+
+%% @hidden
 init([]) ->
   {ok, Stores} = application:get_env(sumo_db, stores),
-  Children = lists:map(
-    fun({Name, Module, Options}) -> ?CLD(Name, Module, Options) end,
-    Stores
-  ),
-  {ok, { {one_for_one, 5, 10}, Children} }.
+  Children = lists:map(fun({Name, Module, Options}) ->
+    child_spec(Name, Module, Options)
+  end, Stores),
+  {ok, {{one_for_one, 5, 10}, Children}}.
+
+%%%=============================================================================
+%%% Internal functions
+%%%=============================================================================
+
+%% @private
+child_spec(Name, Module, Options) ->
+  {Name,
+   {sumo_store, start_link, [Name, Module, Options]},
+   permanent,
+   5000,
+   worker,
+   [Module]}.

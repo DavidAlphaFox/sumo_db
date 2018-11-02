@@ -21,41 +21,44 @@
 -github("https://github.com/inaka").
 -license("Apache License 2.0").
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Exports.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--export([dispatch/2, dispatch/3]).
+%%% API
+-export([dispatch/2, dispatch/3, dispatch/4]).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Code starts here.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% @doc Dispatchs an event through gen_event:notify/2.
--spec dispatch(sumo:schema_name(), term()) -> ok.
+%%% Types
+-type event_id() :: reference().
+
+-export_type([event_id/0]).
+
+%%%=============================================================================
+%%% API
+%%%=============================================================================
+
+%% @doc Dispatch an event through gen_event:notify/2.
+-spec dispatch(sumo:schema_name(), term()) -> event_id() | no_event_managers.
 dispatch(DocName, Event) ->
   dispatch(DocName, Event, []).
 
-%% @doc Dispatchs an event through gen_event:notify/2.
--spec dispatch(sumo:schema_name(), term(), term()) -> ok.
+%% @doc Dispatch an event through gen_event:notify/2.
+-spec dispatch(sumo:schema_name(), term(), term()) ->
+  event_id() | no_event_managers.
 dispatch(DocName, Event, Args) ->
-  case get_event_manager(DocName) of
-    undefined -> ok;
-    EventManager -> gen_event:notify(EventManager, {DocName, Event, Args})
-  end.
+  EventId = make_ref(),
+  dispatch(DocName, EventId, Event, Args).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Private API.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% @doc Returns the name of the event manager configured for the given
-%% doc, or undefined.
--spec get_event_manager(
-  sumo:schema_name()
-) -> undefined|atom()|{atom(), term()}.
-get_event_manager(DocName) ->
-  {ok, Docs} = application:get_env(sumo_db, events),
-  case Docs of
-    undefined -> undefined;
-    EventManagers -> case proplists:get_value(DocName, EventManagers) of
-      undefined -> undefined;
-      Name -> Name
-    end
+%% @doc Dispatch an event through gen_event:notify/2.
+-spec dispatch(DocName, EventId, Event, Args) -> Res when
+  DocName :: sumo:schema_name(),
+  EventId :: event_id(),
+  Event   :: term(),
+  Args    :: term(),
+  Res     :: event_id() | no_event_managers.
+dispatch(DocName, EventId, Event, Args) ->
+  case sumo_config:get_event_managers(DocName) of
+    [] ->
+      no_event_managers;
+    EventManagers ->
+      ok = lists:foreach(fun(EventManager) ->
+        gen_event:notify(EventManager, {EventId, DocName, Event, Args})
+      end, EventManagers),
+      EventId
   end.

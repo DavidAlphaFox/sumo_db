@@ -21,7 +21,7 @@
 -github("https://github.com/inaka").
 -license("Apache License 2.0").
 
--behavior(sumo_doc).
+-behaviour(sumo_doc).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Exports.
@@ -77,19 +77,19 @@ get(Key, Vote) when is_atom(Key), is_list(Vote) ->
 %% sumo behavior follows.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% @doc Part of the sumo_doc behavior.
--spec sumo_wakeup(sumo:doc()) -> vote().
+-spec sumo_wakeup(sumo:model()) -> vote().
 sumo_wakeup(Data) ->
   maps:to_list(Data).
 
 %% @doc Part of the sumo_doc behavior.
--spec sumo_sleep(vote()) -> sumo:doc().
+-spec sumo_sleep(vote()) -> sumo:model().
 sumo_sleep(Vote) ->
   maps:from_list(Vote).
 
 %% @doc Part of the sumo_doc behavior.
 -spec sumo_schema() -> sumo:schema().
 sumo_schema() ->
-  sumo:new_schema(?MODULE, [
+  sumo:new_schema(vote, [
     sumo:new_field(id, integer, [not_null, auto_increment, id]),
     sumo:new_field(post_id, integer),
     sumo:new_field(reader_id, integer)
